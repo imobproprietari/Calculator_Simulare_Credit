@@ -109,4 +109,4 @@ fig.add_trace(
         mode="lines",
         name="Sold Rămas",
         line=dict(color="#1f77b4", width=3),
-        hovertemplate="**Luna %{x}**
+        hovertemplate="""**Luna %{x}**
