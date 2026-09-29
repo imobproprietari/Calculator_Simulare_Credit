@@ -1,17 +1,20 @@
-import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import streamlit as st
 
 st.set_page_config(
-    page_title="Simulatoare Credit Imobiliar", page_icon="🏠", layout="wide"
+    page_title="Simulatoare Credit Imobiliar Interactiv",
+    page_icon="🏠",
+    layout="wide",
 )
 
 st.title("🏠 Simulator Interactiv Credit Imobiliar")
 st.write(
-    "Introdu datele creditului tău în panoul din stânga pentru a genera scadențarul și graficele de evoluție."
+    "Mută cursorul peste grafice pentru a vedea detaliile exacte (sold, principal, dobândă) pentru fiecare lună în parte."
 )
 
-# Panou lateral pentru introducerea datelor (Sidebar)
+# Panou lateral pentru parametri
 st.sidebar.header("⚙️ Parametri Credit")
 suma_credit = st.sidebar.number_input(
     "Suma împrumutată (RON):", min_value=10000, value=797096, step=5000
@@ -28,7 +31,7 @@ tip_rambursare = st.sidebar.selectbox(
     index=0,
 )
 
-# Calcul matematic
+# Calcul scadențar
 dobanda_lunara = (rata_dobanda_anuala / 100) / 12
 sold_ramas = suma_credit
 istoric_luni, istoric_sold, istoric_principal, istoric_dobanda, (
@@ -74,7 +77,7 @@ df = pd.DataFrame(
     }
 )
 
-# Afișare metrici cheie
+# Metrici cheie
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Prima Rată", f"{df['Rata Totala'].iloc[0]:,.2f} RON")
 col2.metric("Total Dobândă", f"{df['Dobanda'].sum():,.2f} RON")
@@ -83,48 +86,26 @@ col4.metric("Perioadă (Ani)", f"{perioada_luni / 12:.1f} ani")
 
 st.markdown("---")
 
-# Generare Grafic Matplotlib
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-
-ax1.plot(
-    df["Luna"],
-    df["Sold Ramas"],
-    color="#1f77b4",
-    linewidth=2.5,
-    label="Sold Rămas",
+# ==========================================
+# CREARE GRAFIC INTERACTIV CU PLOTLY
+# ==========================================
+fig = make_subplots(
+    rows=2,
+    cols=1,
+    shared_xaxes=True,
+    vertical_spacing=0.12,
+    subplot_titles=(
+        "Evoluția Soldului Rămas",
+        "Componența Lunară a Ratei (Principal vs. Dobândă)",
+    ),
 )
-ax1.fill_between(df["Luna"], df["Sold Ramas"], color="#1f77b4", alpha=0.15)
-ax1.set_title("Evoluția Soldului Rămas", fontsize=11, fontweight="bold")
-ax1.set_ylabel("RON")
-ax1.grid(True, linestyle="--", alpha=0.5)
 
-ax2.bar(
-    df["Luna"],
-    df["Principal"],
-    color="#2ca02c",
-    label="Principal (Capital)",
-    width=1.0,
-)
-ax2.bar(
-    df["Luna"],
-    df["Dobanda"],
-    bottom=df["Principal"],
-    color="#d62728",
-    label="Dobândă",
-    width=1.0,
-)
-ax2.set_title(
-    "Componența Lunară a Ratei (Principal vs. Dobândă)",
-    fontsize=11,
-    fontweight="bold",
-)
-ax2.set_xlabel("Luna din scadențar")
-ax2.set_ylabel("RON / lună")
-ax2.legend(loc="upper right")
-ax2.grid(True, linestyle="--", alpha=0.5)
-
-st.pyplot(fig)
-
-# Tabel detaliat
-with st.expander("📋 Vezi Scadențarul Detaliat Lună cu Lună"):
-    st.dataframe(df.style.format("{:,.2f}"))
+# Grafic 1: Evoluție Sold Rămas
+fig.add_trace(
+    go.Scatter(
+        x=df["Luna"],
+        y=df["Sold Ramas"],
+        mode="lines",
+        name="Sold Rămas",
+        line=dict(color="#1f77b4", width=3),
+        hovertemplate="**Luna %{x}**
